@@ -28,7 +28,7 @@ def audio_callback(indata, frames, times, status):
 stream = sd.InputStream(device=device, channels=channel,
                         samplerate=samplerate, callback=audio_callback,
                         dtype=np.float32)
-with stream:    
+with stream:
     i = 0
     print('record start')
     while i < 1000:
@@ -36,4 +36,4 @@ with stream:
         time.sleep(0.1)
     print('record end')
 
-np.save('data.npy', data)        
+np.save('data.npy', data)

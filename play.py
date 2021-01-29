@@ -17,5 +17,5 @@ fs = 12000
 a = data.shape
 
 
-sd.play(data[:,0], fs)
+sd.play(data[:, 0], fs)
 sd.wait()
