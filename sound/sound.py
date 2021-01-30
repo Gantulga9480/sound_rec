@@ -32,14 +32,14 @@ class Sound:
         self._device = device
         if samplerate is None:
             device_info = sd.query_devices(device, 'input')
-            samplerate = device_info['default_samplerate']
-        self._samplerate = samplerate
+            self._samplerate = device_info['default_samplerate']
+        else:
+            self._samplerate = samplerate
         self._channels = channels
         self._downsample = downsample
         self._dtype = dtype
         self._save_path = r'sound_cache/data'
         self._sound_buffer = Queue()
-        self._max_buffer_size = 400_000
 
     def recorder(self):
         """
@@ -66,15 +66,12 @@ class Sound:
             fs : int
                 Sampling rate for playing sound data.
             wait : bool
-                If True, the player blocks code execution until finished
+                If True, the player blocks next code execution until finished
                 playing the current data.
         """
-        fs = fs if fs else self._samplerate
-        if data:
-            sd.play(data, fs)
-        else:
-            data = self.get_data()
-            sd.play(data, fs)
+        fs = fs if fs else self._samplerate/self._downsample
+        data = data if data else self.get_data()
+        sd.play(data, fs)
         if wait:
             sd.wait()
         else:
@@ -111,13 +108,13 @@ class Sound:
             print(f"Can't load file from {path}")
         return data
 
-    @logger
     def callback(self, indata, frames, times, status):
         """
         This is called for each audio block.
         If overwritten, indata must be saved to queue object in order to
         obtain sound input.
         """
+        # print(indata.shape)
         self._sound_buffer.put(indata[::self._downsample])
 
     @logger

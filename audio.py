@@ -31,7 +31,7 @@ stream = sd.InputStream(device=device, channels=channel,
 with stream:
     i = 0
     print('record start')
-    while i < 1000:
+    while i < 100:
         i += 1
         time.sleep(0.1)
     print('record end')
