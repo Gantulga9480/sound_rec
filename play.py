@@ -11,8 +11,8 @@ args = parser.parse_args()
 data_ind = args.index
 
 data = np.load(f'data_{data_ind}.npy')
-data = data*10
-fs = 12000
+# data = data*10
+fs = 44100
 
 a = data.shape
 

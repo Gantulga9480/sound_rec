@@ -11,7 +11,7 @@ while 1:
     except FileNotFoundError:
         break
 
-data = np.zeros((1, 7), dtype=np.float32)
+data = np.zeros((1, 1), dtype=np.float32)
 print(len(datas))
 for d in datas:
     # print(d.shape)
@@ -21,7 +21,7 @@ for d in datas:
 
 # print(data)
 
-data = data*10
-fs = 12000
+# data = data*10
+fs = 44100
 sd.play(data, fs)
 sd.wait()
