@@ -1,0 +1,17 @@
+DEVICE = 7
+CHANNEL = 1
+SAMPLERATE = 48000
+DOWNSAMPLE = 4
+
+SOUND_BUFFER_MAX_CAPACITY = 300_000
+
+BROKER = "127.0.0.1"
+PORT = 1883
+
+PLAY = 'play'
+START = 'start'
+STOP = 'stop'
+RESET = 'reset'
+SAVE = 'save'
+ACTIVITIE_START = 'a_start'
+ACTIVITIE_STOP = 'a_stop'

@@ -1,55 +1,46 @@
 import numpy as np
 import sounddevice as sd
 import time
-import os
-
-
-channel = 7
-device = 7
-samplerate = 48000
-downsample = 1
-index = 0
-buffer = np.zeros((1, channel), dtype=np.float32)
+from parameter import *
+from paho_mqtt import PahoMqtt as Host
 
 
 def audio_callback(indata, frames, times, status):
     """This is called (from a separate thread) for each audio block."""
-    global buffer, index
-    print(indata.shape)
-    data = indata[::downsample]
-    buffer = np.concatenate((buffer, data), axis=0)
-    if buffer.shape[0] > 300000:
-        buffer = np.delete(buffer, 0, axis=0)
-        np.save(f'data_{index}.npy', buffer)
-        buffer = np.zeros((1, channel), dtype=np.float32)
-        index += 1
+    data = indata[::DOWNSAMPLE]
+    mic.buffer = np.concatenate((mic.buffer, data), axis=0)
+    if mic.buffer.shape[0] > SOUND_BUFFER_MAX_CAPACITY:
+        mic.buffer = np.delete(mic.buffer, 0, axis=0)
+        mic.buffer_index += mic.buffer.shape[0]
+        np.save(f'sound_cache/data_{mic.file_index}.npy', mic.buffer)
+        mic.buffer = np.zeros((1, CHANNEL), dtype=np.float32)
+        mic.file_index += 1
 
 
-stream = sd.InputStream(device=device, channels=channel,
-                        samplerate=samplerate, callback=audio_callback,
+mic = Host(BROKER, 'mic_1')
+mic.loop_start()
+
+stream = sd.InputStream(device=DEVICE, channels=CHANNEL,
+                        samplerate=SAMPLERATE, callback=audio_callback,
                         dtype=np.float32)
-with stream:
-    i = 0
-    print('record start')
-    while i < 6000:
-        i += 1
-        time.sleep(0.1)
-print('record end')
-np.save(f'data_{index}.npy', buffer)
-index = 0
-datas = list()
-while 1:
-    try:
-        datas.append(np.load(f'data_{index}.npy'))
-        os.remove(f'data_{index}.npy')
-        index += 1
-    except FileNotFoundError:
-        break
 
-data = np.zeros((1, channel), dtype=np.float32)
-print(len(datas))
-for d in datas:
-    data = np.concatenate((data, d), axis=0)
-sd.play(data, samplerate/downsample)
-sd.wait()
-np.save('data.npy', data)
+while mic.run:
+    if mic.is_streaming:
+        print(f'{mic.info} record start')
+        with stream:
+            while mic.is_streaming:
+                time.sleep(1)
+                print(f'[INFO] {mic.info} is recording : {mic.buffer.shape[0]}')
+        np.save(f'sound_cache/data_{mic.file_index}.npy', mic.buffer)
+        print(f'{mic.info} record end')
+    elif mic.is_idle:
+        while mic.is_idle:
+            print(f'[INFO] {mic.info} is in Idle')
+            time.sleep(0.1)
+    elif mic.is_playing:
+        print(f'[INFO] {mic.info} is playing')
+        sd.play(mic.data, SAMPLERATE/DOWNSAMPLE)
+        sd.wait()
+        mic.is_streaming = False
+        mic.is_playing = False
+        mic.is_idle = True
