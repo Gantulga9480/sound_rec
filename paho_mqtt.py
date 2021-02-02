@@ -1,7 +1,8 @@
 import numpy as np
 from numpy.lib.format import BUFFER_SIZE
 import paho.mqtt.client as mqtt
-from parameter import PLAY, START, STOP, SAVE, RESET, ACTIVITIE_START, ACTIVITIE_STOP, CHANNEL
+from parameter import *
+import sounddevice as sd
 import os
 
 
@@ -44,7 +45,6 @@ class PahoMqtt:
     def __on_message(self, client, userdata, message):
         msg = message.payload.decode("utf-8", "ignore")
         msgs = msg.split("-")
-        print(msgs)
         if msgs[0] == START:
             self.is_streaming = True
             self.is_playing = False
@@ -85,6 +85,7 @@ class PahoMqtt:
                 os.remove(f'sound_cache/data_{i}.npy')
             except FileNotFoundError:
                 break
+            i += 1
         print('[INFO] RESET ...')
 
     def save(self):
@@ -105,10 +106,11 @@ class PahoMqtt:
         ss = self.path.split('/')
         os.makedirs(self.path)
         np.save(f'{self.path}/sound_{self.info}.npy', self.data)
+        
         label_file = open(f'{self.path}/label_time.txt', '+w')
         with label_file:
             for item in self.label:
-                label_file.write(f'{item[0]}, {item[1]}')
+                label_file.write(f'{item[0]}, {item[1]}\n')
         print('[INFO] DONE SAVING DATA ...')
 
     def __on_message_raw(self, client, userdata, message):
@@ -134,3 +136,20 @@ class PahoMqtt:
 
     def loop_start(self):
         self.__client.loop_start()
+
+    def callback(self, indata, frames, times, status):
+        """This is called (from a separate thread) for each audio block."""
+        data = indata[::DOWNSAMPLE]
+        self.buffer = np.concatenate((self.buffer, data), axis=0)
+        if  self.buffer.shape[0] > SOUND_BUFFER_MAX_CAPACITY:
+            self.buffer = np.delete(self.buffer, 0, axis=0)
+            self.buffer_index += self.buffer.shape[0]
+            np.save(f'sound_cache/data_{self.file_index}.npy', self.buffer)
+            self.buffer = np.zeros((1, CHANNEL), dtype=np.float32)
+            self.file_index += 1
+
+    def create_streamer(self):
+        streamer = sd.InputStream(device=DEVICE, channels=CHANNEL,
+                                  samplerate=SAMPLERATE, callback=self.callback,
+                                  dtype=np.float32)
+        return streamer
