@@ -70,7 +70,11 @@ class PahoMqtt:
             self.is_playing = True
             self.is_idle = False
         elif msgs[0] == QUIT:
+            self.is_streaming = False
+            self.is_playing = False
+            self.is_idle = False
             self.run = False
+            self.reset()
 
     def reset(self):
         self.is_streaming = False
