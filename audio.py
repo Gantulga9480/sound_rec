@@ -16,7 +16,6 @@ while mic.run:
             while mic.is_streaming:
                 time.sleep(1)
                 print(f'[INFO] {mic.info} is recording : {mic.buffer.shape[0]}')
-        np.save(f'sound_cache/data_{mic.file_index}.npy', mic.buffer)
         print(f'{mic.info} record end')
     elif mic.is_idle:
         while mic.is_idle:

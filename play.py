@@ -7,7 +7,7 @@ root = tk.Tk()
 root.sound_name = filedialog.askopenfilename(initialdir="/home/lab-408/Desktop/github/sound_rec/",
                                              title="Select file",
                                              filetypes=(("npy file", "*.npy"),
-                                                      ("all files", "*.*")))
+                                                        ("all files", "*.*")))
 
 data = np.load(root.sound_name)
 fs = 12000

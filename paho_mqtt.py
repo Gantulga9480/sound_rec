@@ -1,5 +1,4 @@
 import numpy as np
-from numpy.lib.format import BUFFER_SIZE
 import paho.mqtt.client as mqtt
 from parameter import *
 import sounddevice as sd
@@ -28,7 +27,7 @@ class PahoMqtt:
         self.is_streaming = False
         self.is_idle = True
         self.is_playing = False
-        self.label = list()
+        self.label = []
         self.path = None
         self.run = True
         self.file_index = 0
@@ -56,10 +55,10 @@ class PahoMqtt:
             self.is_idle = True
         elif msgs[0] == ACTIVITIE_START:
             lbl = self.buffer_index + self.buffer.shape[0]
-            self.label.append([f'{msgs[1]} start', lbl])
+            self.label.append([f'{msgs[1]}', lbl])
         elif msgs[0] == ACTIVITIE_STOP:
             lbl = self.buffer_index + self.buffer.shape[0]
-            self.label.append([f'{msgs[1]} end', lbl])
+            self.label.append([f'{msgs[1]}', lbl])
         elif msgs[0] == SAVE:
             self.save()
             self.reset()
@@ -85,10 +84,10 @@ class PahoMqtt:
         self.label.clear()
         self.buffer_index = 0
         self.file_index = 0
-        i =  0
+        i = 0
         while True:
             try:
-                os.remove(f'sound_cache/data_{i}.npy')
+                os.remove(f'cache/data_{i}.npy')
             except FileNotFoundError:
                 break
             i += 1
@@ -99,24 +98,27 @@ class PahoMqtt:
         self.is_streaming = False
         self.is_playing = False
         self.is_idle = True
-        i = 0
+        np.save(f'sound_cache/data_{self.file_index}.npy', self.buffer)
         self.data = np.zeros((1, CHANNEL), dtype=np.float32)
+        i = 0
         while True:
             try:
-                tmp = np.load(f'sound_cache/data_{i}.npy')
+                tmp = np.load(f'cache/data_{i}.npy')
                 self.data = np.concatenate((self.data, tmp), axis=0)
-                os.remove(f'sound_cache/data_{i}.npy')
+                os.remove(f'cache/data_{i}.npy')
                 i += 1
             except FileNotFoundError:
                 break
         ss = self.path.split('/')
-        os.makedirs(self.path)
+        try:
+            os.makedirs(self.path)
+        except FileExistsError:
+            pass
         np.save(f'{self.path}/sound_{self.info}.npy', self.data)
-        
         label_file = open(f'{self.path}/label_time.txt', '+w')
         with label_file:
             for item in self.label:
-                label_file.write(f'{item[0]}, {item[1]}\n')
+                label_file.write(f'{item[0]},{item[1]}\n')
         print('[INFO] DONE SAVING DATA ...')
 
     def __on_message_raw(self, client, userdata, message):
@@ -147,15 +149,16 @@ class PahoMqtt:
         """This is called (from a separate thread) for each audio block."""
         data = indata[::DOWNSAMPLE]
         self.buffer = np.concatenate((self.buffer, data), axis=0)
-        if  self.buffer.shape[0] > SOUND_BUFFER_MAX_CAPACITY:
+        if self.buffer.shape[0] > SOUND_BUFFER_MAX_CAPACITY:
             self.buffer = np.delete(self.buffer, 0, axis=0)
             self.buffer_index += self.buffer.shape[0]
-            np.save(f'sound_cache/data_{self.file_index}.npy', self.buffer)
+            np.save(f'cache/data_{self.file_index}.npy', self.buffer)
             self.buffer = np.zeros((1, CHANNEL), dtype=np.float32)
             self.file_index += 1
 
     def create_streamer(self):
         streamer = sd.InputStream(device=DEVICE, channels=CHANNEL,
-                                  samplerate=SAMPLERATE, callback=self.callback,
+                                  samplerate=SAMPLERATE,
+                                  callback=self.callback,
                                   dtype=np.float32)
         return streamer
