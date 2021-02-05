@@ -53,6 +53,8 @@ class PahoMqtt:
             self.is_streaming = False
             self.is_playing = False
             self.is_idle = True
+            np.save(f'{CACHE_PATH}/data_{self.file_index}.npy', self.buffer)
+            self.file_index += 1
         elif msgs[0] == SAVE:
             self.save()
             self.reset()
