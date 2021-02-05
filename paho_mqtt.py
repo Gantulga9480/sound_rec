@@ -69,11 +69,9 @@ class PahoMqtt:
             self.is_playing = True
             self.is_idle = False
         elif msgs[0] == QUIT:
-            self.is_streaming = False
-            self.is_playing = False
+            self.reset()
             self.is_idle = False
             self.run = False
-            self.reset()
 
     def reset(self):
         self.is_streaming = False
@@ -87,7 +85,7 @@ class PahoMqtt:
         i = 0
         while True:
             try:
-                os.remove(f'cache/data_{i}.npy')
+                os.remove(f'{CACHE_PATH}/data_{i}.npy')
             except FileNotFoundError:
                 break
             i += 1
@@ -98,18 +96,17 @@ class PahoMqtt:
         self.is_streaming = False
         self.is_playing = False
         self.is_idle = True
-        np.save(f'sound_cache/data_{self.file_index}.npy', self.buffer)
+        np.save(f'{CACHE_PATH}/data_{self.file_index}.npy', self.buffer)
         self.data = np.zeros((1, CHANNEL), dtype=np.float32)
         i = 0
         while True:
             try:
-                tmp = np.load(f'cache/data_{i}.npy')
+                tmp = np.load(f'{CACHE_PATH}/data_{i}.npy')
                 self.data = np.concatenate((self.data, tmp), axis=0)
-                os.remove(f'cache/data_{i}.npy')
+                os.remove(f'{CACHE_PATH}/data_{i}.npy')
                 i += 1
             except FileNotFoundError:
                 break
-        ss = self.path.split('/')
         try:
             os.makedirs(self.path)
         except FileExistsError:
@@ -152,7 +149,7 @@ class PahoMqtt:
         if self.buffer.shape[0] > SOUND_BUFFER_MAX_CAPACITY:
             self.buffer = np.delete(self.buffer, 0, axis=0)
             self.buffer_index += self.buffer.shape[0]
-            np.save(f'cache/data_{self.file_index}.npy', self.buffer)
+            np.save(f'{CACHE_PATH}/data_{self.file_index}.npy', self.buffer)
             self.buffer = np.zeros((1, CHANNEL), dtype=np.float32)
             self.file_index += 1
 

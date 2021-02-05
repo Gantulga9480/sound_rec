@@ -17,3 +17,5 @@ SAVE = 'save'
 QUIT = 'quit'
 ACTIVITIE_START = 'a_start'
 ACTIVITIE_STOP = 'a_stop'
+
+CACHE_PATH = r'cache'
