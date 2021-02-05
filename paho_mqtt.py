@@ -53,12 +53,6 @@ class PahoMqtt:
             self.is_streaming = False
             self.is_playing = False
             self.is_idle = True
-        elif msgs[0] == ACTIVITIE_START:
-            lbl = self.buffer_index + self.buffer.shape[0]
-            self.label.append([f'{msgs[1]}', lbl])
-        elif msgs[0] == ACTIVITIE_STOP:
-            lbl = self.buffer_index + self.buffer.shape[0]
-            self.label.append([f'{msgs[1]}', lbl])
         elif msgs[0] == SAVE:
             self.save()
             self.reset()
@@ -72,6 +66,12 @@ class PahoMqtt:
             self.reset()
             self.is_idle = False
             self.run = False
+        elif msgs[0] == ACTIVITIE_START:
+            lbl = self.buffer_index + self.buffer.shape[0]
+            self.label.append([f'{msgs[1]}', lbl])
+        elif msgs[0] == ACTIVITIE_STOP:
+            lbl = self.buffer_index + self.buffer.shape[0]
+            self.label.append([f'{msgs[1]}', lbl])
 
     def reset(self):
         self.is_streaming = False

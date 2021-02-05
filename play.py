@@ -13,4 +13,4 @@ data = np.load(root.sound_name)
 fs = 12000
 
 sd.play(data, fs)
-sd.wait()
+root.mainloop()
