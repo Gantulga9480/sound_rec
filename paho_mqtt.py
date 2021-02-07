@@ -145,16 +145,19 @@ class PahoMqtt:
 
     def callback(self, indata, frames, times, status):
         """This is called (from a separate thread) for each audio block."""
-        data = indata[::DOWNSAMPLE]
-        for _ in range(self.cut_num):
-            indata = np.delete(indata, 0, axis=0)
-        self.cut_num = (indata.shape[0] - 1) % 4
-        self.buffer = np.concatenate((self.buffer, data), axis=0)
-        if self.buffer.shape[0] > SOUND_BUFFER_MAX_CAPACITY:
-            self.buffer_index += self.buffer.shape[0]
-            np.save(f'{CACHE_PATH}/data_{self.file_index}.npy', self.buffer)
-            self.buffer = np.empty((1, CHANNEL), dtype=np.float32)
-            self.file_index += 1
+        if indata.shape[0] <= self.cut_num:
+            self.cut_num -= indata.shape[0]
+        else:
+            for _ in range(self.cut_num):
+                indata = np.delete(indata, 0, axis=0)
+            self.cut_num = (indata.shape[0] - 1) % DOWNSAMPLE
+            data = indata[::DOWNSAMPLE]
+            self.buffer = np.concatenate((self.buffer, data), axis=0)
+            if self.buffer.shape[0] > SOUND_BUFFER_MAX_CAPACITY:
+                self.buffer_index += self.buffer.shape[0]
+                np.save(f'{CACHE_PATH}/data_{self.file_index}.npy', self.buffer)
+                self.buffer = np.empty((1, CHANNEL), dtype=np.float32)
+                self.file_index += 1
 
     def create_streamer(self):
         streamer = sd.InputStream(device=DEVICE, channels=CHANNEL,
