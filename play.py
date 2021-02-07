@@ -10,7 +10,7 @@ root.sound_name = filedialog.askopenfilename(initialdir="/home/lab-408/Desktop/g
                                                         ("all files", "*.*")))
 
 data = np.load(root.sound_name)
-fs = 12000
+fs = 48000
 
 sd.play(data, fs)
 root.mainloop()

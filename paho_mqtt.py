@@ -32,8 +32,9 @@ class PahoMqtt:
         self.run = True
         self.file_index = 0
         self.buffer_index = 0
-        self.buffer = np.zeros((1, CHANNEL), dtype=np.float32)
-        self.data = np.zeros((1, CHANNEL), dtype=np.float32)
+        self.buffer = np.empty((1, CHANNEL), dtype=np.float32)
+        self.data = np.empty((1, CHANNEL), dtype=np.float32)
+        self.cut_num = 0
 
     def __on_connect(self, client, userdata, level, buf):
         self.reset()
@@ -77,8 +78,8 @@ class PahoMqtt:
         self.is_streaming = False
         self.is_playing = False
         self.is_idle = True
-        self.buffer = np.zeros((1, CHANNEL), dtype=np.float32)
-        self.data = np.zeros((1, CHANNEL), dtype=np.float32)
+        self.buffer = np.empty((1, CHANNEL), dtype=np.float32)
+        self.data = np.empty((1, CHANNEL), dtype=np.float32)
         self.label.clear()
         self.buffer_index = 0
         self.file_index = 0
@@ -97,7 +98,7 @@ class PahoMqtt:
         self.is_playing = False
         self.is_idle = True
         np.save(f'{CACHE_PATH}/data_{self.file_index}.npy', self.buffer)
-        self.data = np.zeros((1, CHANNEL), dtype=np.float32)
+        self.data = np.empty((1, CHANNEL), dtype=np.float32)
         i = 0
         while True:
             try:
@@ -145,12 +146,14 @@ class PahoMqtt:
     def callback(self, indata, frames, times, status):
         """This is called (from a separate thread) for each audio block."""
         data = indata[::DOWNSAMPLE]
+        for _ in range(self.cut_num):
+            indata = np.delete(indata, 0, axis=0)
+        self.cut_num = (indata.shape[0] - 1) % 4
         self.buffer = np.concatenate((self.buffer, data), axis=0)
         if self.buffer.shape[0] > SOUND_BUFFER_MAX_CAPACITY:
-            self.buffer = np.delete(self.buffer, 0, axis=0)
             self.buffer_index += self.buffer.shape[0]
             np.save(f'{CACHE_PATH}/data_{self.file_index}.npy', self.buffer)
-            self.buffer = np.zeros((1, CHANNEL), dtype=np.float32)
+            self.buffer = np.empty((1, CHANNEL), dtype=np.float32)
             self.file_index += 1
 
     def create_streamer(self):
