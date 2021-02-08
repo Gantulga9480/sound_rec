@@ -1,8 +1,10 @@
 import numpy as np
 import paho.mqtt.client as mqtt
 from parameter import *
+from scipy.io.wavfile import write
 import sounddevice as sd
 import os
+import csv
 
 
 class PahoMqtt:
@@ -112,11 +114,17 @@ class PahoMqtt:
             os.makedirs(self.path)
         except FileExistsError:
             pass
+        print('[INFO] SAVING TO NPY FILE ...')
         np.save(f'{self.path}/sound_{self.info}.npy', self.data)
-        label_file = open(f'{self.path}/label_time.txt', '+w')
+        print('[INFO] DONE SAVING NPY FILE ...')
+        print('[INFO] SAVING TO WAV FILE ...')
+        write(f'{self.path}/sound_{self.info}.wav', SAMPLERATE//DOWNSAMPLE, self.data)
+        print('[INFO] DONE SAVING WAV FILE ...')
+        label_file = open(f'{self.path}/label_time.csv', "w+", newline='')
+        writer = csv.writer(label_file)
         with label_file:
             for item in self.label:
-                label_file.write(f'{item[0]},{item[1]}\n')
+                writer.writerow([item[0], item[1]])
         print('[INFO] DONE SAVING DATA ...')
 
     def __on_message_raw(self, client, userdata, message):
