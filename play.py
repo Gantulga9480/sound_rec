@@ -5,6 +5,7 @@ from tkinter import filedialog
 import csv
 
 root = tk.Tk()
+root.withdraw()
 root.sound_name = filedialog.askopenfilename(initialdir="/home/lab-408/Desktop/github/",
                                              title="Select file",
                                              filetypes=(("npy file", "*.npy"),
